@@ -1,4 +1,4 @@
-# recommond pythoh version > 3.7
+#recommond pythoh version > 3.7
 #!/usr/bin/python3
 
 import string
@@ -515,36 +515,67 @@ class Generator:
         print('=' * 100)
         
         
+    # def generate_tinyrpc_project(self):
+    #     try:
+
+    #         self.parseInput()
+
+    #         print('=' * 150)
+    #         print('Begin generate tinyrpc project')
+
+    #         self.generate_dir()
+
+    #         self.gen_pb_files()
+
+    #         self.gen_makefile()
+
+    #         self.gen_run_script()
+
+    #         self.gen_conf_file()
+
+    #         self.generate_framework_code()
+
+    #         print('Succ generate tinyrpc project')
+    #         print('=' * 150)
+
+    #     except Exception as e:
+    #         print('Falied generate tinyrpc project, err:')
+    #         print(e)
+    #         traceback.print_exc()
+    #         print('=' * 150)
+    #     finally:
+    #         pass
     def generate_tinyrpc_project(self):
         try:
-
             self.parseInput()
 
             print('=' * 150)
             print('Begin generate tinyrpc project')
 
             self.generate_dir()
-
             self.gen_pb_files()
-
             self.gen_makefile()
-
             self.gen_run_script()
-
             self.gen_conf_file()
-
             self.generate_framework_code()
+
+            # 调用 make 命令
+            print('Begin to run make command')
+            make_cmd = f'cd {self.src_path} && make'
+            if os.system(make_cmd) != 0:
+                raise Exception("Failed to execute make command")
 
             print('Succ generate tinyrpc project')
             print('=' * 150)
 
         except Exception as e:
-            print('Falied generate tinyrpc project, err:')
+            print('Failed to generate tinyrpc project, err:')
             print(e)
             traceback.print_exc()
             print('=' * 150)
         finally:
             pass
+
 
 
     def printHelp(self):
