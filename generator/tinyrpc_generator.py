@@ -1,4 +1,5 @@
-#!/usr/bin/python3.7
+# recommond pythoh version > 3.7
+#!/usr/bin/python3
 
 import string
 import sys
