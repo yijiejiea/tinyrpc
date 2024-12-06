@@ -11,10 +11,15 @@
 #include "tinyrpc/comm/log.h"
 #include "tinyrpc/comm/config.h"
 
+
 #define HOOK_SYS_FUNC(name) name##_fun_ptr_t g_sys_##name##_fun = (name##_fun_ptr_t)dlsym(RTLD_NEXT, #name);
 
-
+/**************************
+展开为accept_fun_ptr_t g_sys_accept_fun = (accept_fun_ptr_t)dlsym(RTLD_NEXT, "accept");
+g_sys_accept_fun就是accept函数的指针
+**************************/ 
 HOOK_SYS_FUNC(accept);
+// 以下是hook的函数原理同上
 HOOK_SYS_FUNC(read);
 HOOK_SYS_FUNC(write);
 HOOK_SYS_FUNC(connect);
