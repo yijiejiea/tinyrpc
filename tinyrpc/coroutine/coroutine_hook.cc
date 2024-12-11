@@ -78,13 +78,13 @@ namespace tinyrpc
 			return g_sys_read_fun(fd, buf, count);
 		}
 
-		tinyrpc::Reactor::GetReactor();
-		// assert(reactor != nullptr);
+		tinyrpc::Reactor* reactor = tinyrpc::Reactor::GetReactor();
+		assert(reactor != nullptr);
 
 		tinyrpc::FdEvent::ptr fd_event = tinyrpc::FdEventContainer::GetFdContainer()->getFdEvent(fd);
 		if (fd_event->getReactor() == nullptr)
 		{
-			fd_event->setReactor(tinyrpc::Reactor::GetReactor());
+			fd_event->setReactor(reactor);
 		}
 
 		// if (fd_event->isNonBlock()) {
@@ -125,13 +125,13 @@ namespace tinyrpc
 			DebugLog << "hook disable, call sys accept func";
 			return g_sys_accept_fun(sockfd, addr, addrlen);
 		}
-		tinyrpc::Reactor::GetReactor();
-		// assert(reactor != nullptr);
+		tinyrpc::Reactor* reactor = tinyrpc::Reactor::GetReactor();
+		assert(reactor != nullptr);
 
 		tinyrpc::FdEvent::ptr fd_event = tinyrpc::FdEventContainer::GetFdContainer()->getFdEvent(sockfd);
 		if (fd_event->getReactor() == nullptr)
 		{
-			fd_event->setReactor(tinyrpc::Reactor::GetReactor());
+			fd_event->setReactor(reactor);
 		}
 
 		// if (fd_event->isNonBlock()) {
@@ -168,13 +168,13 @@ namespace tinyrpc
 			DebugLog << "hook disable, call sys write func";
 			return g_sys_write_fun(fd, buf, count);
 		}
-		tinyrpc::Reactor::GetReactor();
-		// assert(reactor != nullptr);
+		tinyrpc::Reactor* reactor = tinyrpc::Reactor::GetReactor();
+		assert(reactor != nullptr);
 
 		tinyrpc::FdEvent::ptr fd_event = tinyrpc::FdEventContainer::GetFdContainer()->getFdEvent(fd);
 		if (fd_event->getReactor() == nullptr)
 		{
-			fd_event->setReactor(tinyrpc::Reactor::GetReactor());
+			fd_event->setReactor(reactor);
 		}
 
 		// if (fd_event->isNonBlock()) {
@@ -211,8 +211,8 @@ namespace tinyrpc
 			DebugLog << "hook disable, call sys connect func";
 			return g_sys_connect_fun(sockfd, addr, addrlen);
 		}
-		tinyrpc::Reactor *reactor = tinyrpc::Reactor::GetReactor();
-		// assert(reactor != nullptr);
+		tinyrpc::Reactor* reactor = tinyrpc::Reactor::GetReactor();
+		assert(reactor != nullptr);
 
 		tinyrpc::FdEvent::ptr fd_event = tinyrpc::FdEventContainer::GetFdContainer()->getFdEvent(sockfd);
 		if (fd_event->getReactor() == nullptr)
