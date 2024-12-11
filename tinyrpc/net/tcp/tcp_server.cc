@@ -81,7 +81,7 @@ int TcpAcceptor::toAccept() {
 		memset(&cli_addr, 0, sizeof(cli_addr));
 		len = sizeof(cli_addr);
 		// call hook accept
-		rt = accept_hook(m_fd, reinterpret_cast<sockaddr *>(&cli_addr), &len);
+		rt = accept(m_fd, reinterpret_cast<sockaddr *>(&cli_addr), &len);
 		if (rt == -1) {
 			DebugLog << "error, no new client coming, errno=" << errno << "error=" << strerror(errno);
 			return -1;
@@ -93,7 +93,7 @@ int TcpAcceptor::toAccept() {
 		len = sizeof(cli_addr);
 		memset(&cli_addr, 0, sizeof(cli_addr));
 		// call hook accept
-		rt = accept_hook(m_fd, reinterpret_cast<sockaddr *>(&cli_addr), &len);
+		rt = accept(m_fd, reinterpret_cast<sockaddr *>(&cli_addr), &len);
 		if (rt == -1) {
 			DebugLog << "error, no new client coming, errno=" << errno << "error=" << strerror(errno);
 			return -1;

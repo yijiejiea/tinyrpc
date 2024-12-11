@@ -119,7 +119,7 @@ void TcpConnection::input() {
     int write_index = m_read_buffer->writeIndex();
 
     DebugLog << "m_read_buffer size=" << m_read_buffer->getBufferVector().size() << "rd=" << m_read_buffer->readIndex() << "wd=" << m_read_buffer->writeIndex();
-    int rt = read_hook(m_fd, &(m_read_buffer->m_buffer[write_index]), read_count);
+    int rt = read(m_fd, &(m_read_buffer->m_buffer[write_index]), read_count);
     if (rt > 0) {
       m_read_buffer->recycleWrite(rt);
     }
@@ -228,7 +228,7 @@ void TcpConnection::output() {
     
     int total_size = m_write_buffer->readAble();
     int read_index = m_write_buffer->readIndex();
-    int rt = write_hook(m_fd, &(m_write_buffer->m_buffer[read_index]), total_size);
+    int rt = write(m_fd, &(m_write_buffer->m_buffer[read_index]), total_size);
     // InfoLog << "write end";
     if (rt <= 0) {
       ErrorLog << "write empty, error=" << strerror(errno);

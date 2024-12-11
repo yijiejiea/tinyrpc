@@ -72,6 +72,7 @@ class QueryServiceImpl : public QueryService {
 
 
 int main(int argc, char* argv[]) {
+  tinyrpc::SetHook(true);
   if (argc != 2) {
     printf("Start TinyRPC server error, input argc is not 2!");
     printf("Start TinyRPC server like this: \n");

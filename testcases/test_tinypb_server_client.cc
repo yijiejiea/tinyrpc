@@ -33,7 +33,7 @@ void test_client() {
 } 
 
 int main(int argc, char* argv[]) {
-
+  tinyrpc::SetHook(true);
   test_client();
 
   return 0;
