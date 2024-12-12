@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <iostream>
 #include <assert.h>
 #include <string.h>
 #include <atomic>
@@ -84,6 +85,7 @@ Coroutine::Coroutine(int size, char* stack_ptr, std::function<void()> cb)
   assert(m_stack_sp);
   
   if (!t_main_coroutine) {
+    printf("main coroutine create\n");
     t_main_coroutine = new Coroutine();
   }
 
@@ -175,6 +177,7 @@ void Coroutine::Yield() {
   Coroutine* co = t_cur_coroutine;
   t_cur_coroutine = t_main_coroutine;
   t_cur_run_time = NULL;
+  std::cout << "Yield: Switching from coroutine " << co->getCorId() << " to main coroutine";
   coctx_swap(&(co->m_coctx), &(t_main_coroutine->m_coctx));
   // DebugLog << "swap back";
 }
@@ -204,7 +207,7 @@ void Coroutine::Resume(Coroutine* co) {
 
   t_cur_coroutine = co;
   t_cur_run_time = co->getRunTime();
-
+  std::cout << "Resume: Switching from main coroutine to coroutine " << co->getCorId() << std::endl;
   coctx_swap(&(t_main_coroutine->m_coctx), &(co->m_coctx));
   // DebugLog << "swap back";
 

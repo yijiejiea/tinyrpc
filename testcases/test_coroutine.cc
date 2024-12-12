@@ -24,14 +24,14 @@ void fun1() {
   std::cout << "cor1 ---- now fitst resume fun1 coroutine by thread 1" << std::endl;
   std::cout << "cor1 ---- now begin to yield fun1 coroutine" << std::endl;
 
-  test_.m_coroutine_mutex.lock();
+  //test_.m_coroutine_mutex.lock();
 
   std::cout << "cor1 ---- coroutine lock on test_, sleep 5s begin" << std::endl;
 
-  sleep(5);
+  //sleep(5);
   std::cout << "cor1 ---- sleep 5s end, now back coroutine lock" << std::endl;
 
-  test_.m_coroutine_mutex.unlock();
+  //test_.m_coroutine_mutex.unlock();
 
   tinyrpc::Coroutine::Yield();
   std::cout << "cor1 ---- fun1 coroutine back, now end" << std::endl;
@@ -39,12 +39,12 @@ void fun1() {
 }
 
 void fun2() {
-  std::cout << "cor222 ---- now fitst resume fun1 coroutine by thread 1" << std::endl;
-  std::cout << "cor222 ---- now begin to yield fun1 coroutine" << std::endl;
+  std::cout << "cor222 ---- now fitst resume fun2 coroutine by thread 2" << std::endl;
+  std::cout << "cor222 ---- now begin to yield fun2 coroutine" << std::endl;
 
-  sleep(2);
+  //sleep(2);
   std::cout << "cor222 ---- coroutine2 want to get coroutine lock of test_" << std::endl;
-  test_.m_coroutine_mutex.lock();
+  //test_.m_coroutine_mutex.lock();
 
   std::cout << "cor222 ---- coroutine2 get coroutine lock of test_ succ" << std::endl;
 
@@ -57,6 +57,7 @@ void* thread1_func(void*) {
   tinyrpc::Coroutine::Resume(cor.get());
   std::cout << "now fun1 coroutine back in thread 1"<< std::endl;
   std::cout << "thread 1 end" << std::endl;
+  tinyrpc::Coroutine::Resume(cor.get());
   return NULL;
 }
 
