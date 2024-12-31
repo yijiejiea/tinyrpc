@@ -1,17 +1,11 @@
-#include <pthread.h>
-#include <memory>
 #include "tinyrpc/net/mutex.h"
-#include "tinyrpc/net/reactor.h"
 #include "tinyrpc/comm/log.h"
 #include "tinyrpc/coroutine/coroutine.h"
-#include "tinyrpc/coroutine/coroutine_hook.h"
-
-// this file copy form sylar
 
 namespace tinyrpc {
 
-
-CoroutineMutex::CoroutineMutex() {}
+// CoroutineMutex 构造函数和析构函数
+CoroutineMutex::CoroutineMutex() = default;
 
 CoroutineMutex::~CoroutineMutex() {
   if (m_lock) {
@@ -19,39 +13,40 @@ CoroutineMutex::~CoroutineMutex() {
   }
 }
 
+// 协程锁的加锁实现
 void CoroutineMutex::lock() {
-
   if (Coroutine::IsMainCoroutine()) {
-    ErrorLog << "main coroutine can't use coroutine mutex";
+    ErrorLog << "Main coroutine can't use coroutine mutex";
     return;
   }
 
   Coroutine* cor = Coroutine::GetCurrentCoroutine();
 
-  Mutex::Lock lock(m_mutex);
+  std::unique_lock<std::mutex> lock(m_mutex);  // 使用 std::mutex 来加锁
   if (!m_lock) {
     m_lock = true;
-    DebugLog << "coroutine succ get coroutine mutex";
+    DebugLog << "Coroutine successfully acquired coroutine mutex";
     lock.unlock();
   } else {
     m_sleep_cors.push(cor);
     auto tmp = m_sleep_cors;
     lock.unlock();
 
-    DebugLog << "coroutine yield, pending coroutine mutex, current sleep queue exist ["
-      << tmp.size() << "] coroutines";
+    DebugLog << "Coroutine yielding, pending on coroutine mutex, current sleep queue size: "
+             << tmp.size() << " coroutines";
 
     Coroutine::Yield();
-  } 
+  }
 }
 
+// 协程锁的解锁实现
 void CoroutineMutex::unlock() {
   if (Coroutine::IsMainCoroutine()) {
-    ErrorLog << "main coroutine can't use coroutine mutex";
+    ErrorLog << "Main coroutine can't use coroutine mutex";
     return;
   }
 
-  Mutex::Lock lock(m_mutex);
+  std::unique_lock<std::mutex> lock(m_mutex);  // 使用 std::mutex 来加锁
   if (m_lock) {
     m_lock = false;
     if (m_sleep_cors.empty()) {
@@ -63,8 +58,8 @@ void CoroutineMutex::unlock() {
     lock.unlock();
 
     if (cor) {
-      // wakeup the first cor in sleep queue
-      DebugLog << "coroutine unlock, now to resume coroutine[" << cor->getCorId() << "]";
+      // 唤醒等待的协程
+      DebugLog << "Coroutine unlocking, resuming coroutine [" << cor->getCorId() << "]";
 
       tinyrpc::Reactor::GetReactor()->addTask([cor]() {
         tinyrpc::Coroutine::Resume(cor);
@@ -73,5 +68,4 @@ void CoroutineMutex::unlock() {
   }
 }
 
-
-}
+}  // namespace tinyrpc

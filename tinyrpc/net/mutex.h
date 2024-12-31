@@ -1,230 +1,136 @@
 #ifndef TINYRPC_MUTEX_H
 #define TINYRPC_MUTEX_H
 
-#include <pthread.h>
 #include <memory>
+#include <mutex>
 #include <queue>
+#include <shared_mutex>
+#include "log.h"
 #include "tinyrpc/coroutine/coroutine.h"
-
-// this file copy form sylar
+#include "reactor.h"
 
 namespace tinyrpc {
 
-template <class T>
-struct ScopedLockImpl
-{
+// 使用标准库的 std::mutex 来替代自定义的 Mutex
+class Mutex {
 public:
-  ScopedLockImpl(T &mutex)
-      : m_mutex(mutex)
-  {
+  typedef std::unique_lock<std::mutex> Lock;
+
+  Mutex() = default;
+  ~Mutex() = default;
+
+  void lock() {
     m_mutex.lock();
-    m_locked = true;
   }
 
-  ~ScopedLockImpl()
-  {
-    unlock();
+  void unlock() {
+    m_mutex.unlock();
   }
 
-  void lock()
-  {
-    if (!m_locked)
-    {
-      m_mutex.lock();
-      m_locked = true;
-    }
-  }
-
-  void unlock()
-  {
-    if (m_locked)
-    {
-      m_mutex.unlock();
-      m_locked = false;
-    }
+  std::mutex& getMutex() {
+    return m_mutex;
   }
 
 private:
-  /// mutex
-  T &m_mutex;
-  /// 是否已上锁
-  bool m_locked;
+  std::mutex m_mutex;  // 标准的 mutex
 };
 
-template <class T>
-struct ReadScopedLockImpl
-{
+// 使用 std::shared_mutex 来替代自定义的 RWMutex
+class RWMutex {
 public:
-  ReadScopedLockImpl(T &mutex)
-      : m_mutex(mutex)
-  {
-    m_mutex.rdlock();
-    m_locked = true;
+  typedef std::unique_lock<std::shared_mutex> WriteLock;
+  typedef std::shared_lock<std::shared_mutex> ReadLock;
+
+  RWMutex() = default;
+  ~RWMutex() = default;
+
+  void rdlock() {
+    m_lock.lock_shared();
   }
 
-  ~ReadScopedLockImpl()
-  {
-    unlock();
+  void wrlock() {
+    m_lock.lock();
   }
 
-  void lock()
-  {
-    if (!m_locked)
-    {
-      m_mutex.rdlock();
-      m_locked = true;
-    }
-  }
-
-  void unlock()
-  {
-    if (m_locked)
-    {
-      m_mutex.unlock();
-      m_locked = false;
-    }
+  void unlock() {
+    m_lock.unlock();
   }
 
 private:
-  /// mutex
-  T &m_mutex;
-  /// 是否已上锁
-  bool m_locked;
+  std::shared_mutex m_lock;  // 标准的 shared_mutex
 };
-
-/**
- * @brief 局部写锁模板实现
- */
-template <class T>
-struct WriteScopedLockImpl
-{
-public:
-  WriteScopedLockImpl(T &mutex)
-      : m_mutex(mutex)
-  {
-    m_mutex.wrlock();
-    m_locked = true;
-  }
-
-  ~WriteScopedLockImpl()
-  {
-    unlock();
-  }
-
-  void lock()
-  {
-    if (!m_locked)
-    {
-      m_mutex.wrlock();
-      m_locked = true;
-    }
-  }
-
-  void unlock()
-  {
-    if (m_locked)
-    {
-      m_mutex.unlock();
-      m_locked = false;
-    }
-  }
-
-private:
-  T &m_mutex;
-  bool m_locked;
-};
-
-class Mutex
-{
-public:
-  /// 局部锁
-  typedef ScopedLockImpl<Mutex> Lock;
-
-  Mutex()
-  {
-    pthread_mutex_init(&m_mutex, nullptr);
-  }
-
-  ~Mutex()
-  {
-    pthread_mutex_destroy(&m_mutex);
-  }
-
-  void lock()
-  {
-    pthread_mutex_lock(&m_mutex);
-  }
-
-  void unlock()
-  {
-    pthread_mutex_unlock(&m_mutex);
-  }
-
-  pthread_mutex_t *getMutex()
-  {
-    return &m_mutex;
-  }
-
-private:
-  /// mutex
-  pthread_mutex_t m_mutex;
-};
-
-class RWMutex
-{
-public:
-  /// 局部读锁
-  typedef ReadScopedLockImpl<RWMutex> ReadLock;
-
-  typedef WriteScopedLockImpl<RWMutex> WriteLock;
-
-  RWMutex()
-  {
-    pthread_rwlock_init(&m_lock, nullptr);
-  }
-
-  ~RWMutex()
-  {
-    pthread_rwlock_destroy(&m_lock);
-  }
-
-  void rdlock()
-  {
-    pthread_rwlock_rdlock(&m_lock);
-  }
-
-  void wrlock()
-  {
-    pthread_rwlock_wrlock(&m_lock);
-  }
-
-  void unlock()
-  {
-    pthread_rwlock_unlock(&m_lock);
-  }
-
-private:
-  pthread_rwlock_t m_lock;
-};
-
 
 class CoroutineMutex {
- public:
-  typedef ScopedLockImpl<CoroutineMutex> Lock;
+public:
+  typedef std::unique_lock<std::mutex> Lock;
 
-  CoroutineMutex();
+  CoroutineMutex() = default;
+  ~CoroutineMutex() {
+    if (m_lock) {
+      unlock();
+    }
+  }
 
-  ~CoroutineMutex();
+  void lock() {
+    if (Coroutine::IsMainCoroutine()) {
+      ErrorLog << "Main coroutine can't use coroutine mutex";
+      return;
+    }
 
-  void lock();
+    Coroutine* cor = Coroutine::GetCurrentCoroutine();
 
-  void unlock();
- private:
-  bool m_lock {false};
-  Mutex m_mutex;
-  std::queue<Coroutine*> m_sleep_cors;
+    // 使用 std::mutex 来加锁
+    Lock lock(m_mutex);
+    if (!m_lock) {
+      m_lock = true;
+      DebugLog << "Coroutine successfully acquired coroutine mutex";
+      lock.unlock();
+    } else {
+      m_sleep_cors.push(cor);
+      auto tmp = m_sleep_cors;
+      lock.unlock();
+
+      DebugLog << "Coroutine yielding, pending on coroutine mutex, current sleep queue size: "
+               << tmp.size() << " coroutines";
+
+      Coroutine::Yield();
+    }
+  }
+
+  void unlock() {
+    if (Coroutine::IsMainCoroutine()) {
+      ErrorLog << "Main coroutine can't use coroutine mutex";
+      return;
+    }
+
+    Lock lock(m_mutex);
+    if (m_lock) {
+      m_lock = false;
+      if (m_sleep_cors.empty()) {
+        return;
+      }
+
+      Coroutine* cor = m_sleep_cors.front();
+      m_sleep_cors.pop();
+      lock.unlock();
+
+      if (cor) {
+        // Wake up the first coroutine in the sleep queue
+        DebugLog << "Coroutine unlocking, resuming coroutine [" << cor->getCorId() << "]";
+
+        tinyrpc::Reactor::GetReactor()->addTask([cor]() {
+          tinyrpc::Coroutine::Resume(cor);
+        }, true);
+      }
+    }
+  }
+
+private:
+  bool m_lock = false;
+  std::mutex m_mutex;  // 使用标准的 mutex
+  std::queue<Coroutine*> m_sleep_cors;  // 存放等待的协程队列
 };
 
+}  // namespace tinyrpc
 
-}
-#endif
+#endif  // TINYRPC_MUTEX_H
