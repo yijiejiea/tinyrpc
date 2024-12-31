@@ -1,12 +1,11 @@
 #include "tinyrpc/net/mutex.h"
 #include "tinyrpc/comm/log.h"
 #include "tinyrpc/coroutine/coroutine.h"
+#include "tinyrpc/net/reactor.h"
 
 namespace tinyrpc {
 
 // CoroutineMutex 构造函数和析构函数
-CoroutineMutex::CoroutineMutex() = default;
-
 CoroutineMutex::~CoroutineMutex() {
   if (m_lock) {
     unlock();
@@ -25,7 +24,6 @@ void CoroutineMutex::lock() {
   std::unique_lock<std::mutex> lock(m_mutex);  // 使用 std::mutex 来加锁
   if (!m_lock) {
     m_lock = true;
-    DebugLog << "Coroutine successfully acquired coroutine mutex";
     lock.unlock();
   } else {
     m_sleep_cors.push(cor);
