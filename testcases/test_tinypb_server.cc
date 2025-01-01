@@ -3,6 +3,7 @@
 #include <atomic>
 
 #include "tinyrpc/net/tcp/tcp_server.h"
+#include "tinyrpc/coroutine/coroutine_hook.h"
 #include "tinyrpc/net/net_address.h"
 #include "tinyrpc/net/mutex.h"
 #include "tinyrpc/net/tinypb/tinypb_rpc_dispatcher.h"
@@ -24,11 +25,11 @@ class QueryServiceImpl : public QueryService {
                        ::queryNameRes* response,
                        ::google::protobuf::Closure* done) {
     
-    AppInfoLog("QueryServiceImpl.query_name, req={%s}", request->ShortDebugString().c_str());
+    AppInfoLog << "QueryServiceImpl.query_name, req={%s}", request->ShortDebugString().c_str();
     response->set_id(request->id());
     response->set_name("ikerli");
 
-    AppInfoLog("QueryServiceImpl.query_name, res={%s}", response->ShortDebugString().c_str());
+    AppInfoLog << "QueryServiceImpl.query_name, res={%s}", response->ShortDebugString().c_str();
 
     if (done) {
       done->Run();

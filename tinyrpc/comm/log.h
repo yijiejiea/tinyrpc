@@ -6,16 +6,9 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <fmt/core.h>  // fmt 库用于格式化支持
 
 #include "tinyrpc/comm/config.h"
-
-// 跨平台支持
-#ifdef _WIN32
-    #define NOMINMAX
-    #include <windows.h>
-#else
-    #include <unistd.h>
-#endif
 
 namespace tinyrpc {
 
@@ -33,6 +26,7 @@ public:
     LoggerStream() : oss() {}
 
     ~LoggerStream() {
+        // 析构时实际输出日志
         if (gRpcLogger) {
             gRpcLogger->info(oss.str());
         }
@@ -41,18 +35,26 @@ public:
         }
     }
 
+    // 支持格式化输出
+    template <typename... Args>
+    LoggerStream& operator()(const char* format, Args&&... args) {
+        oss << fmt::format(format, std::forward<Args>(args)...);
+        return *this;
+    }
+
+    // 支持流式输出
     template <typename T>
     LoggerStream& operator<<(const T& value) {
-        oss << value;
+        oss << value;  // 构建日志信息
         return *this;
     }
 
 private:
-    std::ostringstream oss;
+    std::ostringstream oss;  // 用于拼接日志信息的流
 };
 
 // 初始化日志器
-
+void initLogger();
 
 // 日志宏定义
 #define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}] ", __FILE__, __LINE__), \
