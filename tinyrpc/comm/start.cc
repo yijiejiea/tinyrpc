@@ -8,7 +8,6 @@
 namespace tinyrpc {
 
 tinyrpc::Config::ptr gRpcConfig;
-tinyrpc::Logger::ptr gRpcLogger;
 tinyrpc::TcpServer::ptr gRpcServer;
 
 static int g_init_config = 0;
@@ -43,7 +42,6 @@ TcpServer::ptr GetServer() {
 }
 
 void StartRpcServer() {
-  gRpcLogger->start();
   gRpcServer->start();
 }
 

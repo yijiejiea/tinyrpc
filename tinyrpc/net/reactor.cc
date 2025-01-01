@@ -31,7 +31,7 @@ Reactor::Reactor() {
   // assert(t_reactor_ptr == nullptr);
 	if (t_reactor_ptr != nullptr) {
 		ErrorLog << "this thread has already create a reactor";
-		Exit(0);
+		exit(0);
 	}
 
   m_tid = gettid();
@@ -41,7 +41,7 @@ Reactor::Reactor() {
 
   if((m_epfd = epoll_create(1)) <= 0 ) {
 		ErrorLog << "start server error. epoll_create error, sys error=" << strerror(errno);
-		Exit(0);
+		exit(0);
 	} else {
 		DebugLog << "m_epfd = " << m_epfd;
 	}
@@ -49,7 +49,7 @@ Reactor::Reactor() {
 
 	if((m_wake_fd = eventfd(0, EFD_NONBLOCK)) <= 0 ) {
 		ErrorLog << "start server error. event_fd error, sys error=" << strerror(errno);
-		Exit(0);
+		exit(0);
 	}
 	DebugLog << "wakefd = " << m_wake_fd;
   // assert(m_wake_fd > 0);	

@@ -10,7 +10,10 @@ set(PATH_LIB lib)
 set(PATH_BIN bin)
 set(PATH_TESTCASES testcases)
 
-include_directories(${PROJECT_SOURCE_DIR})
+
+message(${PROJECT_SOURCE_DIR})
+
+include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/tinyrpc/3rdparty/spdlog/include)
 # *.cc
 aux_source_directory(${PROJECT_SOURCE_DIR}/tinyrpc/comm COMM)
 aux_source_directory(${PROJECT_SOURCE_DIR}/tinyrpc/coroutine COR)
@@ -48,9 +51,9 @@ set(
     ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_tinypb_server.cc
     ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_tinypb_server.pb.cc
 )
-add_executable(test_tinypb_server ${test_tinypb_server})
-target_link_libraries(test_tinypb_server ${LIBS})
-install(TARGETS test_tinypb_server DESTINATION ${PATH_BIN})
+#add_executable(test_tinypb_server ${test_tinypb_server})
+#target_link_libraries(test_tinypb_server ${LIBS})
+#install(TARGETS test_tinypb_server DESTINATION ${PATH_BIN})
 
 # test_tinypb_server_client
 set(
@@ -58,9 +61,9 @@ set(
     ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_tinypb_server_client.cc
     ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_tinypb_server.pb.cc
 )
-add_executable(test_tinypb_server_client ${test_tinypb_server_client})
-target_link_libraries(test_tinypb_server_client ${LIBS})
-install(TARGETS test_tinypb_server_client DESTINATION ${PATH_BIN})
+#add_executable(test_tinypb_server_client ${test_tinypb_server_client})
+#target_link_libraries(test_tinypb_server_client ${LIBS})
+#install(TARGETS test_tinypb_server_client DESTINATION ${PATH_BIN})
 
 # test_http_server
 set(
@@ -68,9 +71,9 @@ set(
     ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_http_server.cc
     ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_tinypb_server.pb.cc
 )
-add_executable(test_http_server ${test_http_server})
-target_link_libraries(test_http_server ${LIBS})
-install(TARGETS test_http_server DESTINATION ${PATH_BIN})
+#add_executable(test_http_server ${test_http_server})
+#target_link_libraries(test_http_server ${LIBS})
+#install(TARGETS test_http_server DESTINATION ${PATH_BIN})
 
 # test_coroutine
 set(

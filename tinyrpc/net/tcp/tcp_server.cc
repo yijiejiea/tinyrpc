@@ -28,7 +28,7 @@ void TcpAcceptor::init() {
 	m_fd = socket(m_local_addr->getFamily(), SOCK_STREAM, 0);
 	if (m_fd < 0) {
 		ErrorLog << "start server error. socket error, sys error=" << strerror(errno);
-		Exit(0);
+		exit(0);
 	}
 	// assert(m_fd != -1);
 	DebugLog << "create listenfd succ, listenfd=" << m_fd;
@@ -49,7 +49,7 @@ void TcpAcceptor::init() {
 	int rt = bind(m_fd, m_local_addr->getSockAddr(), len);
 	if (rt != 0) {
 		ErrorLog << "start server error. bind error, errno=" << errno << ", error=" << strerror(errno);
-		Exit(0);
+		exit(0);
 	}
   // assert(rt == 0);
 
@@ -57,7 +57,7 @@ void TcpAcceptor::init() {
 	rt = listen(m_fd, 10);
 	if (rt != 0) {
 		ErrorLog << "start server error. listen error, fd= " << m_fd << ", errno=" << errno << ", error=" << strerror(errno);
-		Exit(0);
+		exit(0);
 	}
   // assert(rt == 0);
 

@@ -1,232 +1,82 @@
-#ifndef TINYRPC_COMM_LOG_H
-#define TINYRPC_COMM_LOG_H
+#pragma once
 
-#include <sstream>
-#include <sstream>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
-#include <pthread.h>
-#include <unistd.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <memory>
-#include <vector>
-#include <queue>
-#include <semaphore.h>
-#include "tinyrpc/net/mutex.h"
+#include <string>
+#include <sstream>
+
 #include "tinyrpc/comm/config.h"
 
+// 跨平台支持
+#ifdef _WIN32
+    #define NOMINMAX
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
 
 namespace tinyrpc {
 
-extern tinyrpc::Config::ptr gRpcConfig;
-
-template<typename... Args>
-std::string formatString(const char* str, Args&&... args) {
-
-  int size = snprintf(nullptr, 0, str, args...);
-
-  std::string result;
-  if (size > 0) {
-    result.resize(size);
-    snprintf(&result[0], size + 1, str, args...);
-  }
-
-  return result;
-}
-
-
-#define DebugLog \
-	if (tinyrpc::OpenLog() && tinyrpc::LogLevel::DEBUG >= tinyrpc::gRpcConfig->m_log_level) \
-		tinyrpc::LogTmp(tinyrpc::LogEvent::ptr(new tinyrpc::LogEvent(tinyrpc::LogLevel::DEBUG, __FILE__, __LINE__, __func__, tinyrpc::LogType::RPC_LOG))).getStringStream()
-
-#define InfoLog \
-	if (tinyrpc::OpenLog() && tinyrpc::LogLevel::INFO >= tinyrpc::gRpcConfig->m_log_level) \
-		tinyrpc::LogTmp(tinyrpc::LogEvent::ptr(new tinyrpc::LogEvent(tinyrpc::LogLevel::INFO, __FILE__, __LINE__, __func__, tinyrpc::LogType::RPC_LOG))).getStringStream()
-
-#define WarnLog \
-	if (tinyrpc::OpenLog() && tinyrpc::LogLevel::WARN >= tinyrpc::gRpcConfig->m_log_level) \
-		tinyrpc::LogTmp(tinyrpc::LogEvent::ptr(new tinyrpc::LogEvent(tinyrpc::LogLevel::WARN, __FILE__, __LINE__, __func__, tinyrpc::LogType::RPC_LOG))).getStringStream()
-
-#define ErrorLog \
-	if (tinyrpc::OpenLog() && tinyrpc::LogLevel::ERROR >= tinyrpc::gRpcConfig->m_log_level) \
-		tinyrpc::LogTmp(tinyrpc::LogEvent::ptr(new tinyrpc::LogEvent(tinyrpc::LogLevel::ERROR, __FILE__, __LINE__, __func__, tinyrpc::LogType::RPC_LOG))).getStringStream()
-
-
-#define AppDebugLog(str, ...) \
-  if (tinyrpc::OpenLog() && tinyrpc::LogLevel::DEBUG >= tinyrpc::gRpcConfig->m_app_log_level) \
-  { \
-    tinyrpc::Logger::GetLogger()->pushAppLog(tinyrpc::LogEvent(tinyrpc::LogLevel::DEBUG, __FILE__, __LINE__, __func__, tinyrpc::LogType::APP_LOG).toString() \
-      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + tinyrpc::formatString(str, ##__VA_ARGS__) + "\n");\
-  } \
-
-#define AppInfoLog(str, ...) \
-  if (tinyrpc::OpenLog() && tinyrpc::LogLevel::INFO>= tinyrpc::gRpcConfig->m_app_log_level) \
-  { \
-    tinyrpc::Logger::GetLogger()->pushAppLog(tinyrpc::LogEvent(tinyrpc::LogLevel::INFO, __FILE__, __LINE__, __func__, tinyrpc::LogType::APP_LOG).toString() \
-      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + tinyrpc::formatString(str, ##__VA_ARGS__) + "\n");\
-  } \
-
-#define AppWarnLog(str, ...) \
-  if (tinyrpc::OpenLog() && tinyrpc::LogLevel::WARN>= tinyrpc::gRpcConfig->m_app_log_level) \
-  { \
-    tinyrpc::Logger::GetLogger()->pushAppLog(tinyrpc::LogEvent(tinyrpc::LogLevel::WARN, __FILE__, __LINE__, __func__, tinyrpc::LogType::APP_LOG).toString() \
-      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + tinyrpc::formatString(str, ##__VA_ARGS__) + "\n");\
-  } \
-
-#define AppErrorLog(str, ...) \
-  if (tinyrpc::OpenLog() && tinyrpc::LogLevel::ERROR>= tinyrpc::gRpcConfig->m_app_log_level) \
-  { \
-    tinyrpc::Logger::GetLogger()->pushAppLog(tinyrpc::LogEvent(tinyrpc::LogLevel::ERROR, __FILE__, __LINE__, __func__, tinyrpc::LogType::APP_LOG).toString() \
-      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + tinyrpc::formatString(str, ##__VA_ARGS__) + "\n");\
-  } \
-
-
-
-enum LogType {
-	RPC_LOG = 1,
-	APP_LOG = 2,
-};
-
-pid_t gettid();
+// 外部日志对象声明
+extern std::shared_ptr<spdlog::logger> gRpcLogger;
+extern std::shared_ptr<spdlog::logger> gAppLogger;
 
 LogLevel stringToLevel(const std::string& str);
 std::string levelToString(LogLevel level);
+void initLogger();
 
-bool OpenLog();
+// 日志流类
+class LoggerStream {
+public:
+    LoggerStream() : oss() {}
 
-class LogEvent {
+    ~LoggerStream() {
+        if (gRpcLogger) {
+            gRpcLogger->info(oss.str());
+        }
+        if (gAppLogger) {
+            gAppLogger->info(oss.str());
+        }
+    }
 
- public:
- 	
-	typedef std::shared_ptr<LogEvent> ptr;
-	LogEvent(LogLevel level, const char* file_name, int line, const char* func_name, LogType type);
+    template <typename T>
+    LoggerStream& operator<<(const T& value) {
+        oss << value;
+        return *this;
+    }
 
-	~LogEvent();
-
-	std::stringstream& getStringStream();
-
-	std::string toString();
-
-	void log();
-
-
- private:
-		
-	// uint64_t m_timestamp;
-	timeval m_timeval;
-	LogLevel m_level;
-	pid_t m_pid {0};
-	pid_t m_tid {0};
-	int m_cor_id {0};
-
-	const char* m_file_name;
-	int m_line {0};
-	const char* m_func_name;
-	LogType m_type;
-	std::string m_msg_no;
-
-	std::stringstream m_ss;
+private:
+    std::ostringstream oss;
 };
 
+// 初始化日志器
 
-class LogTmp {
- 
- public:
-	explicit LogTmp(LogEvent::ptr event);
 
-	~LogTmp();
+// 日志宏定义
+#define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-	std::stringstream& getStringStream();
+#define InfoLog tinyrpc::gRpcLogger->info("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
- private:
-	LogEvent::ptr m_event;
+#define WarnLog tinyrpc::gRpcLogger->warn("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-};
+#define ErrorLog tinyrpc::gRpcLogger->error("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-class AsyncLogger {
- public:
-  typedef std::shared_ptr<AsyncLogger> ptr;
+#define AppDebugLog tinyrpc::gAppLogger->debug("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-	AsyncLogger(const char* file_name, const char* file_path, int max_size, LogType logtype);
-	~AsyncLogger();
+#define AppInfoLog tinyrpc::gAppLogger->info("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-	void push(std::vector<std::string>& buffer);
+#define AppWarnLog tinyrpc::gAppLogger->warn("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-	void flush();
+#define AppErrorLog tinyrpc::gAppLogger->error("[{}:{}] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream()
 
-	static void* excute(void*);
-
-	void stop();
-
- public:
-	std::queue<std::vector<std::string>> m_tasks;
-
- private:
-	const char* m_file_name;
-	const char* m_file_path;
-	int m_max_size {0};
-	LogType m_log_type;
-	int m_no {0};
-	bool m_need_reopen {false};
-	FILE* m_file_handle {nullptr};
-	std::string m_date;
-
- 	Mutex m_mutex;
-  pthread_cond_t m_condition;
-	bool m_stop {false};
-
- public:
-  pthread_t m_thread;
-	sem_t m_semaphore;
-
-};
-
-class Logger {
-
- public:
-	static Logger* GetLogger();
- public:
-  typedef std::shared_ptr<Logger> ptr;
-
-	Logger();
-	~Logger();
-
-	void init(const char* file_name, const char* file_path, int max_size, int sync_inteval);
-
-	void pushRpcLog(const std::string& log_msg);
-	void pushAppLog(const std::string& log_msg);
-	void loopFunc();
-
-	void flush();
-
-	void start();
-
-	AsyncLogger::ptr getAsyncLogger() {
-		return m_async_rpc_logger;
-	}
-
-	AsyncLogger::ptr getAsyncAppLogger() {
-		return m_async_app_logger;
-	}
-
- public:
-	std::vector<std::string> m_buffer;
-	std::vector<std::string> m_app_buffer;
-
- private:
- 	Mutex m_app_buff_mutex;
- 	Mutex m_buff_mutex;
-	bool m_is_init {false};
-	AsyncLogger::ptr m_async_rpc_logger;
-	AsyncLogger::ptr m_async_app_logger;
-
-	int m_sync_inteval {0};
-
-};
-
-void Exit(int code);
-
-}
-
-#endif
+}  // namespace tinyrpc

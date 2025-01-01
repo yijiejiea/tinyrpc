@@ -11,8 +11,6 @@
 
 
 namespace tinyrpc {
-
-extern tinyrpc::Logger::ptr gRpcLogger;
 extern tinyrpc::TcpServer::ptr gRpcServer;
 
 Config::Config(const char* file_path) : m_file_path(std::string(file_path)) {
@@ -76,10 +74,6 @@ void Config::readLogConfig(TiXmlElement* log_node) {
   }
 
   m_log_sync_inteval = std::atoi(node->GetText());
-
-  gRpcLogger = std::make_shared<Logger>();
-  gRpcLogger->init(m_log_prefix.c_str(), m_log_path.c_str(), m_log_max_size, m_log_sync_inteval);
-
 }
 
 void Config::readDBConfig(TiXmlElement* node) {
