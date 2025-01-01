@@ -5,7 +5,9 @@
 #include <mutex>
 #include <queue>
 #include <shared_mutex>
+#include "log.h"
 #include "tinyrpc/coroutine/coroutine.h"
+#include "reactor.h"
 
 namespace tinyrpc {
 
@@ -63,10 +65,65 @@ public:
   typedef std::unique_lock<std::mutex> Lock;
 
   CoroutineMutex() = default;
-  ~CoroutineMutex();
+  ~CoroutineMutex() {
+    if (m_lock) {
+      unlock();
+    }
+  }
 
-  void lock();
-  void unlock();
+  void lock() {
+    if (Coroutine::IsMainCoroutine()) {
+      ErrorLog << "Main coroutine can't use coroutine mutex";
+      return;
+    }
+
+    Coroutine* cor = Coroutine::GetCurrentCoroutine();
+
+    // 使用 std::mutex 来加锁
+    Lock lock(m_mutex);
+    if (!m_lock) {
+      m_lock = true;
+      DebugLog << "Coroutine successfully acquired coroutine mutex";
+      lock.unlock();
+    } else {
+      m_sleep_cors.push(cor);
+      auto tmp = m_sleep_cors;
+      lock.unlock();
+
+      DebugLog << "Coroutine yielding, pending on coroutine mutex, current sleep queue size: "
+               << tmp.size() << " coroutines";
+
+      Coroutine::Yield();
+    }
+  }
+
+  void unlock() {
+    if (Coroutine::IsMainCoroutine()) {
+      ErrorLog << "Main coroutine can't use coroutine mutex";
+      return;
+    }
+
+    Lock lock(m_mutex);
+    if (m_lock) {
+      m_lock = false;
+      if (m_sleep_cors.empty()) {
+        return;
+      }
+
+      Coroutine* cor = m_sleep_cors.front();
+      m_sleep_cors.pop();
+      lock.unlock();
+
+      if (cor) {
+        // Wake up the first coroutine in the sleep queue
+        DebugLog << "Coroutine unlocking, resuming coroutine [" << cor->getCorId() << "]";
+
+        tinyrpc::Reactor::GetReactor()->addTask([cor]() {
+          tinyrpc::Coroutine::Resume(cor);
+        }, true);
+      }
+    }
+  }
 
 private:
   bool m_lock = false;
