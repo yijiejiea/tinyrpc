@@ -9,7 +9,6 @@
 #include "tinyrpc/comm/log.h"
 #include "tinyrpc/comm/start.h"
 #include "test_tinypb_server.pb.h"
-#include <tinyrpc/coroutine/coroutine_hook.h>
 
 
 static int i = 0;
@@ -73,7 +72,7 @@ class QueryServiceImpl : public QueryService {
 
 
 int main(int argc, char* argv[]) {
-  //tinyrpc::SetHook(true);
+  tinyrpc::SetHook(true);
   if (argc != 2) {
     printf("Start TinyRPC server error, input argc is not 2!");
     printf("Start TinyRPC server like this: \n");

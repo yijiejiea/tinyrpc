@@ -178,7 +178,7 @@ void Reactor::addEventInLoopThread(int fd, epoll_event event) {
 	if (is_add) {
 		m_fds.push_back(fd);
 	}
-	DebugLog << "epoll_ctl add succ111111111111, fd[" << fd << "]"; 
+	DebugLog << "epoll_ctl add succ, fd[" << fd << "]"; 
 
 }
 
@@ -251,13 +251,13 @@ void Reactor::loop() {
     lock.unlock();
 
 		for (size_t i = 0; i < tmp_tasks.size(); ++i) {
-			 DebugLog << "begin to excute task[" << i << "]";
+			// DebugLog << "begin to excute task[" << i << "]";
 			if (tmp_tasks[i]) {
 				tmp_tasks[i]();
 			}
-			 DebugLog << "end excute tasks[" << i << "]";
+			// DebugLog << "end excute tasks[" << i << "]";
 		}
-		 DebugLog << "to epoll_wait";
+		// DebugLog << "to epoll_wait";
 		int rt = epoll_wait(m_epfd, re_events, MAX_EVENTS, t_max_epoll_timeout);
 
 		// DebugLog << "epoll_wait back";
@@ -265,13 +265,13 @@ void Reactor::loop() {
 		if (rt < 0) {
 			ErrorLog << "epoll_wait error, skip, errno=" << strerror(errno);
 		} else {
-			 DebugLog << "epoll_wait back, rt = " << rt;
+			// DebugLog << "epoll_wait back, rt = " << rt;
 			for (int i = 0; i < rt; ++i) {
 				epoll_event one_event = re_events[i];	
 
 				if (one_event.data.fd == m_wake_fd && (one_event.events & READ)) {
 					// wakeup
-					DebugLog << "epoll wakeup, fd=[" << m_wake_fd << "]";
+					// DebugLog << "epoll wakeup, fd=[" << m_wake_fd << "]";
 					char buf[8];
 					while(1) {
 						if((g_sys_read_fun(m_wake_fd, buf, 8) == -1) && errno == EAGAIN) {
@@ -319,12 +319,12 @@ void Reactor::loop() {
                   continue;
                 }
                 if (one_event.events & EPOLLIN) {
-                  DebugLog << "socket [" << fd << "] occur read event";
+                  // DebugLog << "socket [" << fd << "] occur read event";
                   Mutex::Lock lock(m_mutex);
                   m_pending_tasks.push_back(read_cb);						
                 }
                 if (one_event.events & EPOLLOUT) {
-                  DebugLog << "socket [" << fd << "] occur write event";
+                  // DebugLog << "socket [" << fd << "] occur write event";
                   Mutex::Lock lock(m_mutex);
                   m_pending_tasks.push_back(write_cb);						
                 }

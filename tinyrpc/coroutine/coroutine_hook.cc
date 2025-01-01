@@ -331,12 +331,10 @@ extern "C"
 	{
 		if (!tinyrpc::g_hook)
 		{
-			DebugLog << "accept";
 			return g_sys_accept_fun(sockfd, addr, addrlen);
 		}
 		else
 		{
-			DebugLog << "accept hook";
 			return tinyrpc::accept_hook(sockfd, addr, addrlen);
 		}
 	}
@@ -345,12 +343,10 @@ extern "C"
 	{
 		if (!tinyrpc::g_hook)
 		{
-			DebugLog << "read";
 			return g_sys_read_fun(fd, buf, count);
 		}
 		else
 		{
-			DebugLog << "read hook";
 			return tinyrpc::read_hook(fd, buf, count);
 		}
 	}
@@ -359,12 +355,10 @@ extern "C"
 	{
 		if (!tinyrpc::g_hook)
 		{
-			DebugLog << "write";
 			return g_sys_write_fun(fd, buf, count);
 		}
 		else
 		{
-			DebugLog << "write hook";
 			return tinyrpc::write_hook(fd, buf, count);
 		}
 	}
@@ -373,12 +367,10 @@ extern "C"
 	{
 		if (!tinyrpc::g_hook)
 		{
-			DebugLog << "connect";
 			return g_sys_connect_fun(sockfd, addr, addrlen);
 		}
 		else
 		{
-			DebugLog << "connect hook";
 			return tinyrpc::connect_hook(sockfd, addr, addrlen);
 		}
 	}

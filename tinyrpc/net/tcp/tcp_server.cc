@@ -137,16 +137,15 @@ TcpServer::TcpServer(NetAddress::ptr addr, ProtocalType type /*= TinyPb_Protocal
 
 void TcpServer::start() {
 
-	DebugLog<<"TcpServer::start";
 	m_acceptor.reset(new TcpAcceptor(m_addr));
-    m_acceptor->init();
+  m_acceptor->init();
 	m_accept_cor = GetCoroutinePool()->getCoroutineInstanse();
 	m_accept_cor->setCallBack(std::bind(&TcpServer::MainAcceptCorFunc, this));
 
 	InfoLog << "resume accept coroutine";
 	tinyrpc::Coroutine::Resume(m_accept_cor.get());
 
-    m_io_pool->start();
+  m_io_pool->start();
 	m_main_reactor->loop();
 
 }
@@ -159,8 +158,8 @@ TcpServer::~TcpServer() {
 
 void TcpServer::MainAcceptCorFunc() {
 
-	DebugLog << "MainAcceptCorFunc";
   while (!m_is_stop_accept) {
+
     int fd = m_acceptor->toAccept();
     if (fd == -1) {
       ErrorLog << "accept ret -1 error, return, to yield";
