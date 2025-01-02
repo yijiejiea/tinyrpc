@@ -5,6 +5,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <memory>
 #include <string>
+#include <filesystem>
 #include <sstream>
 #include <fmt/core.h>  // fmt 库用于格式化支持
 
@@ -18,20 +19,18 @@ extern std::shared_ptr<spdlog::logger> gAppLogger;
 
 LogLevel stringToLevel(const std::string& str);
 std::string levelToString(LogLevel level);
-void initLogger();
+void initLogger(const std::string& log_file_path = "tinyrpc.log", spdlog::level::level_enum log_level = spdlog::level::debug);
 
 // 日志流类
 class LoggerStream {
 public:
-    LoggerStream() : oss() {}
+    // 接受一个日志级别来构造
+    LoggerStream(spdlog::level::level_enum level) : oss(), level(level) {}
 
+    // 析构时输出日志
     ~LoggerStream() {
-        // 析构时实际输出日志
         if (gRpcLogger) {
-            gRpcLogger->info(oss.str());
-        }
-        if (gAppLogger) {
-            gAppLogger->info(oss.str());
+            gRpcLogger->log(level, oss.str());
         }
     }
 
@@ -51,34 +50,35 @@ public:
 
 private:
     std::ostringstream oss;  // 用于拼接日志信息的流
+    spdlog::level::level_enum level;  // 日志级别
 };
 
-// 初始化日志器
-void initLogger();
 
 // 日志宏定义
-#define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+// RPC 日志宏定义
+#define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}] [debug] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::debug)
 
-#define InfoLog tinyrpc::gRpcLogger->info("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+#define InfoLog tinyrpc::gRpcLogger->info("[{}:{}] [info] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::info)
 
-#define WarnLog tinyrpc::gRpcLogger->warn("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+#define WarnLog tinyrpc::gRpcLogger->warn("[{}:{}] [warning] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::warn)
 
-#define ErrorLog tinyrpc::gRpcLogger->error("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+#define ErrorLog tinyrpc::gRpcLogger->error("[{}:{}] [error] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::err)
 
-#define AppDebugLog tinyrpc::gAppLogger->debug("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+// 应用程序日志宏定义
+#define AppDebugLog tinyrpc::gAppLogger->debug("[{}:{}] [debug] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::debug)
 
-#define AppInfoLog tinyrpc::gAppLogger->info("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+#define AppInfoLog tinyrpc::gAppLogger->info("[{}:{}] [info] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::info)
 
-#define AppWarnLog tinyrpc::gAppLogger->warn("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+#define AppWarnLog tinyrpc::gAppLogger->warn("[{}:{}] [warning] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::warn)
 
-#define AppErrorLog tinyrpc::gAppLogger->error("[{}:{}] ", __FILE__, __LINE__), \
-  tinyrpc::LoggerStream()
+#define AppErrorLog tinyrpc::gAppLogger->error("[{}:{}] [error] ", __FILE__, __LINE__), \
+  tinyrpc::LoggerStream(spdlog::level::err)
 
 }  // namespace tinyrpc

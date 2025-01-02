@@ -53,16 +53,23 @@ namespace tinyrpc
     return LogLevel::DEBUG;
   }
 
-  void initLogger()
-  {
-    // 初始化RPC日志器，控制台输出
-    gRpcLogger = spdlog::stdout_color_mt("rpc");
-    gRpcLogger->set_level(spdlog::level::debug);  // 设置默认日志级别为 debug
-    gRpcLogger->flush_on(spdlog::level::info);
+  void initLogger(const std::string& log_file_path, spdlog::level::level_enum log_level) {
+    // 创建控制台输出（有颜色）
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(log_level);  // 控制台日志级别
 
-    // 初始化应用日志器，控制台输出
-    gAppLogger = spdlog::stdout_color_mt("app");
-    gAppLogger->set_level(spdlog::level::debug);  // 设置默认日志级别为 debug
-    gAppLogger->flush_on(spdlog::level::info);
-  }
+    // 创建文件输出（日志保存到文件）
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file_path, true);
+    file_sink->set_level(log_level);  // 文件日志级别
+
+    // 创建 gRpcLogger
+    gRpcLogger = std::make_shared<spdlog::logger>("rpc_logger", spdlog::sinks_init_list{console_sink, file_sink});
+    gRpcLogger->set_level(log_level);  // 全局日志级别
+
+    // 创建 gAppLogger，使用不同的文件或输出
+    auto app_file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("app_" + log_file_path, true);
+    gAppLogger = std::make_shared<spdlog::logger>("app_logger", app_file_sink);
+    gAppLogger->set_level(log_level);  // 可以设置不同的日志级别
+}
+
 }
