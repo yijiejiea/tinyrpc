@@ -3,7 +3,9 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <memory>
+#include <optional>
 #include <string>
 #include <filesystem>
 #include <sstream>
@@ -20,7 +22,15 @@ namespace tinyrpc
 
   LogLevel stringToLevel(const std::string &str);
   std::string levelToString(LogLevel level);
-  void initLogger(const std::string &log_file_path = "tinyrpc.log", spdlog::level::level_enum log_level = spdlog::level::debug);
+  // 初始化日志函数
+  void initLogger(
+      std::optional<LogLevel> log_level = std::optional<LogLevel>(DEBUG),
+      std::optional<std::string> log_file_path = std::optional<std::string>(),
+      std::optional<size_t> max_file_size = std::optional<size_t>(10 * 1024 * 1024), // 默认 10MB
+      std::optional<size_t> max_files = std::optional<size_t>(5)                     // 默认最多 5 个文件
+  );
+
+  spdlog::level::level_enum mapLogLevel(LogLevel log_level);
 
   // 日志流类
   class LoggerStream
@@ -61,16 +71,16 @@ namespace tinyrpc
 
 // 日志宏定义
 // RPC 日志宏定义
-#define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}] [debug] ", __FILE__, __LINE__), \
+#define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}]", __FILE__, __LINE__), \
                  tinyrpc::LoggerStream(spdlog::level::debug)
 
-#define InfoLog tinyrpc::gRpcLogger->info("[{}:{}] [info] ", __FILE__, __LINE__), \
+#define InfoLog tinyrpc::gRpcLogger->info("[{}:{}] ", __FILE__, __LINE__), \
                 tinyrpc::LoggerStream(spdlog::level::info)
 
-#define WarnLog tinyrpc::gRpcLogger->warn("[{}:{}] [warning] ", __FILE__, __LINE__), \
+#define WarnLog tinyrpc::gRpcLogger->warn("[{}:{}]", __FILE__, __LINE__), \
                 tinyrpc::LoggerStream(spdlog::level::warn)
 
-#define ErrorLog tinyrpc::gRpcLogger->error("[{}:{}] [error] ", __FILE__, __LINE__), \
+#define ErrorLog tinyrpc::gRpcLogger->error("[{}:{}]", __FILE__, __LINE__), \
                  tinyrpc::LoggerStream(spdlog::level::err)
 
 // 应用程序日志宏定义
