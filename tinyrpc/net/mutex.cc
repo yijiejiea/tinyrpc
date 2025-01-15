@@ -5,6 +5,7 @@
 #include "tinyrpc/comm/log.h"
 #include "tinyrpc/coroutine/coroutine.h"
 #include "tinyrpc/coroutine/coroutine_hook.h"
+#include <iostream>
 
 // this file copy form sylar
 
@@ -20,14 +21,12 @@ CoroutineMutex::~CoroutineMutex() {
 }
 
 void CoroutineMutex::lock() {
-
   if (Coroutine::IsMainCoroutine()) {
     ErrorLog << "main coroutine can't use coroutine mutex";
     return;
   }
 
   Coroutine* cor = Coroutine::GetCurrentCoroutine();
-
   Mutex::Lock lock(m_mutex);
   if (!m_lock) {
     m_lock = true;
@@ -39,10 +38,10 @@ void CoroutineMutex::lock() {
     lock.unlock();
 
     DebugLog << "coroutine yield, pending coroutine mutex, current sleep queue exist ["
-      << tmp.size() << "] coroutines";
+              << tmp.size() << "] coroutines";
 
     Coroutine::Yield();
-  } 
+  }
 }
 
 void CoroutineMutex::unlock() {
@@ -64,14 +63,12 @@ void CoroutineMutex::unlock() {
 
     if (cor) {
       // wakeup the first cor in sleep queue
-      DebugLog << "coroutine unlock, now to resume coroutine[" << cor->getCorId() << "]";
+      DebugLog << "coroutine unlock, now to resume coroutine[" << cor->getCorId() << "]" ;
 
       tinyrpc::Reactor::GetReactor()->addTask([cor]() {
         tinyrpc::Coroutine::Resume(cor);
-      }, true);
+    }, true);
     }
   }
 }
-
-
 }

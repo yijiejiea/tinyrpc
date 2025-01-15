@@ -69,31 +69,60 @@ namespace tinyrpc
     spdlog::level::level_enum level; // 日志级别
   };
 
-// 日志宏定义
-// RPC 日志宏定义
-#define DebugLog tinyrpc::gRpcLogger->debug("[{}:{}]", __FILE__, __LINE__), \
-                 tinyrpc::LoggerStream(spdlog::level::debug)
+  // 日志宏定义
+  // RPC 日志宏定义
+  #define DebugLog tinyrpc::Logger::getInstance().getRpcLogger()->debug("[{}:{}]", __FILE__, __LINE__), \
+                   tinyrpc::LoggerStream(spdlog::level::debug)
 
-#define InfoLog tinyrpc::gRpcLogger->info("[{}:{}] ", __FILE__, __LINE__), \
-                tinyrpc::LoggerStream(spdlog::level::info)
+  #define InfoLog tinyrpc::Logger::getInstance().getRpcLogger()->info("[{}:{}] ", __FILE__, __LINE__), \
+                  tinyrpc::LoggerStream(spdlog::level::info)
 
-#define WarnLog tinyrpc::gRpcLogger->warn("[{}:{}]", __FILE__, __LINE__), \
-                tinyrpc::LoggerStream(spdlog::level::warn)
+  #define WarnLog tinyrpc::Logger::getInstance().getRpcLogger()->warn("[{}:{}]", __FILE__, __LINE__), \
+                  tinyrpc::LoggerStream(spdlog::level::warn)
 
-#define ErrorLog tinyrpc::gRpcLogger->error("[{}:{}]", __FILE__, __LINE__), \
-                 tinyrpc::LoggerStream(spdlog::level::err)
+  #define ErrorLog tinyrpc::Logger::getInstance().getRpcLogger()->error("[{}:{}]", __FILE__, __LINE__), \
+                   tinyrpc::LoggerStream(spdlog::level::err)
 
-// 应用程序日志宏定义
-#define AppDebugLog tinyrpc::gAppLogger->debug("[{}:{}] [debug] ", __FILE__, __LINE__), \
-                    tinyrpc::LoggerStream(spdlog::level::debug)
+  // 应用程序日志宏定义
+  #define AppDebugLog tinyrpc::Logger::getInstance().getAppLogger()->debug("[{}:{}] [debug] ", __FILE__, __LINE__), \
+                      tinyrpc::LoggerStream(spdlog::level::debug)
 
-#define AppInfoLog tinyrpc::gAppLogger->info("[{}:{}] [info] ", __FILE__, __LINE__), \
-                   tinyrpc::LoggerStream(spdlog::level::info)
+  #define AppInfoLog tinyrpc::Logger::getInstance().getAppLogger()->info("[{}:{}] [info] ", __FILE__, __LINE__), \
+                     tinyrpc::LoggerStream(spdlog::level::info)
 
-#define AppWarnLog tinyrpc::gAppLogger->warn("[{}:{}] [warning] ", __FILE__, __LINE__), \
-                   tinyrpc::LoggerStream(spdlog::level::warn)
+  #define AppWarnLog tinyrpc::Logger::getInstance().getAppLogger()->warn("[{}:{}] [warning] ", __FILE__, __LINE__), \
+                     tinyrpc::LoggerStream(spdlog::level::warn)
 
-#define AppErrorLog tinyrpc::gAppLogger->error("[{}:{}] [error] ", __FILE__, __LINE__), \
-                    tinyrpc::LoggerStream(spdlog::level::err)
+  #define AppErrorLog tinyrpc::Logger::getInstance().getAppLogger()->error("[{}:{}] [error] ", __FILE__, __LINE__), \
+                      tinyrpc::LoggerStream(spdlog::level::err)
+
+  // 单例模式的 Logger 类
+  class Logger {
+  public:
+    static Logger& getInstance() {
+      static Logger instance;
+      return instance;
+    }
+
+    std::shared_ptr<spdlog::logger> getRpcLogger() {
+      if (!gRpcLogger) {
+        initLogger();
+      }
+      return gRpcLogger;
+    }
+
+    std::shared_ptr<spdlog::logger> getAppLogger() {
+      if (!gAppLogger) {
+        initLogger();
+      }
+      return gAppLogger;
+    }
+
+  private:
+    Logger() = default;
+    ~Logger() = default;
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
+  };
 
 } // namespace tinyrpc

@@ -96,6 +96,15 @@ add_executable(test_thread_pool ${test_thread_pool})
 target_link_libraries(test_thread_pool ${LIBS})
 install(TARGETS test_thread_pool DESTINATION ${PATH_BIN})
 
+# test_mutex
+set(
+    test_mutex
+    ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_mutex.cpp
+)
+add_executable(test_mutex ${test_mutex})
+target_link_libraries(test_mutex ${LIBS})
+install(TARGETS test_mutex DESTINATION ${PATH_BIN})
+
 # install *.h
 add_subdirectory(tinyrpc/comm)
 add_subdirectory(tinyrpc/coroutine)
