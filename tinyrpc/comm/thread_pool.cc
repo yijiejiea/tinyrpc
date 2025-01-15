@@ -1,63 +1,61 @@
-#include <pthread.h>
+#include <thread>
 #include <queue>
 #include <functional>
+#include <vector>
+#include <condition_variable>
+#include <mutex>
 #include "tinyrpc/comm/thread_pool.h"
 
 namespace tinyrpc {
 
-void* ThreadPool::MainFunction(void* ptr) {
-  ThreadPool* pool = reinterpret_cast<ThreadPool*>(ptr);
-  pthread_cond_init(&pool->m_condition, NULL);
-
-  while (!pool->m_is_stop) {
-    Mutex::Lock lock(pool->m_mutex);
-
-    while (pool->m_tasks.empty()) {
-      pthread_cond_wait(&(pool->m_condition), pool->m_mutex.getMutex());
+void ThreadPool::MainFunction() {
+  while (!m_is_stop) {
+    std::function<void()> task;
+    {
+      std::unique_lock<std::mutex> lock(m_mutex);
+      m_condition.wait(lock, [this] { return m_is_stop || !m_tasks.empty(); });
+      if (m_is_stop && m_tasks.empty()) {
+        return;
+      }
+      task = std::move(m_tasks.front());
+      m_tasks.pop();
     }
-    std::function<void()> cb = pool->m_tasks.front();
-    pool->m_tasks.pop();
-    lock.unlock();
-
-    cb();
+    task();
   }
-  return nullptr;
-
 }
 
-
-ThreadPool::ThreadPool(int size) : m_size(size) {
+ThreadPool::ThreadPool(int size) : m_size(size), m_is_stop(false) {
   for (int i = 0; i < m_size; ++i) {
-    pthread_t thread;
-    m_threads.emplace_back(thread);
+    m_threads.emplace_back(&ThreadPool::MainFunction, this);
   }
-  pthread_cond_init(&m_condition, nullptr);
-
 }
 
 void ThreadPool::start() {
-  for (int i = 0; i < m_size; ++i) {
-    pthread_create(&m_threads[i], nullptr, &ThreadPool::MainFunction, this);
-  }
-  
+  // Threads are already started in the constructor
 }
 
 void ThreadPool::stop() {
-  m_is_stop = true;
+  {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_is_stop = true;
+  }
+  m_condition.notify_all();
+  for (std::thread &thread : m_threads) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
 }
 
-
 void ThreadPool::addTask(std::function<void()> cb) {
-  Mutex::Lock lock(m_mutex);
-  m_tasks.push(cb);
-  lock.unlock();
-  pthread_cond_signal(&m_condition);
+  {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_tasks.push(std::move(cb));
+  }
+  m_condition.notify_one();
 }
 
 ThreadPool::~ThreadPool() {
-  // for (int i = 0; i < m_size; ++i) {
-  //   pthread_join(m_threads[i], nullptr);
-  // }
+  stop();
 }
-
-}
+} 

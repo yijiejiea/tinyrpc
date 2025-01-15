@@ -87,6 +87,15 @@ add_executable(test_coroutine ${test_coroutine})
 target_link_libraries(test_coroutine ${LIBS})
 install(TARGETS test_coroutine DESTINATION ${PATH_BIN})
 
+# test_thread_pool
+set(
+    test_thread_pool
+    ${PROJECT_SOURCE_DIR}/${PATH_TESTCASES}/test_thread_pool.cpp
+)
+add_executable(test_thread_pool ${test_thread_pool})
+target_link_libraries(test_thread_pool ${LIBS})
+install(TARGETS test_thread_pool DESTINATION ${PATH_BIN})
+
 # install *.h
 add_subdirectory(tinyrpc/comm)
 add_subdirectory(tinyrpc/coroutine)

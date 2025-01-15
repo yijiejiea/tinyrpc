@@ -1,8 +1,9 @@
 #ifndef TINYRPC_MUTEX_H
 #define TINYRPC_MUTEX_H
 
-#include <pthread.h>
 #include <memory>
+#include <shared_mutex>
+#include <mutex>
 #include <queue>
 #include "tinyrpc/coroutine/coroutine.h"
 
@@ -137,37 +138,20 @@ private:
 class Mutex
 {
 public:
-  /// 局部锁
   typedef ScopedLockImpl<Mutex> Lock;
-
-  Mutex()
-  {
-    pthread_mutex_init(&m_mutex, nullptr);
-  }
-
-  ~Mutex()
-  {
-    pthread_mutex_destroy(&m_mutex);
-  }
 
   void lock()
   {
-    pthread_mutex_lock(&m_mutex);
+    m_mutex.lock();
   }
 
   void unlock()
   {
-    pthread_mutex_unlock(&m_mutex);
-  }
-
-  pthread_mutex_t *getMutex()
-  {
-    return &m_mutex;
+    m_mutex.unlock();
   }
 
 private:
-  /// mutex
-  pthread_mutex_t m_mutex;
+  std::mutex m_mutex;
 };
 
 class RWMutex
@@ -178,33 +162,27 @@ public:
 
   typedef WriteScopedLockImpl<RWMutex> WriteLock;
 
-  RWMutex()
-  {
-    pthread_rwlock_init(&m_lock, nullptr);
-  }
-
-  ~RWMutex()
-  {
-    pthread_rwlock_destroy(&m_lock);
-  }
-
   void rdlock()
   {
-    pthread_rwlock_rdlock(&m_lock);
+    m_mutex.lock_shared();
   }
 
+  void unrdlock()
+  {
+    m_mutex.unlock_shared();
+  }
   void wrlock()
   {
-    pthread_rwlock_wrlock(&m_lock);
+    m_mutex.lock();
   }
 
   void unlock()
   {
-    pthread_rwlock_unlock(&m_lock);
+    m_mutex.unlock();
   }
 
 private:
-  pthread_rwlock_t m_lock;
+  std::shared_mutex m_mutex;
 };
 
 

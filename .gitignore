@@ -12,3 +12,5 @@ lib/*
 *.a
 *.pb.h
 *.pb.cc
+
+.codegpt
